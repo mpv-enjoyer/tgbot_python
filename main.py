@@ -1,32 +1,44 @@
 #!/usr/bin/env python
 # pylint: disable=unused-argument
-# This program is dedicated to the public domain under the CC0 license.
+
 import logging
-import sqlite3
-
-from telegram import ForceReply, Update
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
-
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
+import sqlite3 as sql
+sql.threadsafety = 3 # https://docs.python.org/3/library/sqlite3.html#sqlite3.threadsafety
+import asyncio
+
+from telegram import Update
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+
 logger = logging.getLogger(__name__)
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Send a message when the command /start is issued."""
-    user = update.effective_user                                                             
-    await update.message.reply_html("started", )
+async def birthdays():
+    while True:
+        print("Every 1 sec")
+        await asyncio.sleep(1)
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    context.job_queue.run_repeating()
     replied_to = update.message.reply_to_message
     if replied_to is not None:
         #await replied_to.reply_photo("ai.jpg")
         await replied_to.reply_text("Это нейросеть?")
     await update.message.delete()
 
+def is_caller_admin(update: Update) -> bool:
+    # Source - https://stackoverflow.com/a/74736279
+    # Posted by CallMeStag
+    # Retrieved 2026-02-01, License - CC BY-SA 4.0
+    
+    chat_admins = update.effective_chat.get_administrators()
+    return update.effective_user in (admin.user for admin in chat_admins)
+
 async def echo_ehh(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    print(update.message.chat_id, update.effective_user.id)
     text = update.message.text
     if text in ["эх", "эхх", "эххх", "эхххх", "эх)", "эх!", "эх."]:
         await update.message.reply_text("Эххх!")
@@ -37,7 +49,12 @@ def main() -> None:
     application = Application.builder().token(SECRET).build()
     application.add_handler(CommandHandler("ai", echo))
     application.add_handler(MessageHandler(filters.USER, echo_ehh))
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.create_task(birthdays())
     application.run_polling(allowed_updates=Update.MESSAGE)
+    #application.run_polling(allowed_updates=Update.MESSAGE)
+    #loop.run_forever()
 
 if __name__ == "__main__":
     main()
