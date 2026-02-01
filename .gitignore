@@ -1,0 +1,6 @@
+*
+!.gitignore
+!Dockerfile
+!main.py
+!run.sh
+!build.sh
