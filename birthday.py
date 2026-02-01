@@ -6,7 +6,7 @@ import datetime
 TABLE_CALLERS = "callers"
 TABLE_BIRTHDAYS = "birthdays"
 LIMIT_BIRTHDAYS_PER_CALLER = 50
-DATE_FORMAT = "%d.%m.%y"
+DATE_FORMAT = "%d.%m.%Y"
 SQL_DATE_FORMAT = "%Y-%m-%d"
 BIRTHDAYS_DB_FILE_PATH = "birthdays.db"
 

@@ -85,7 +85,7 @@ async def handle_bdays(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     import birthday
     usage = """
 Команды:
- /bday add дд.мм.гг Имечко Фамилия
+ /bday add дд.мм.гггг Имечко Фамилия
  /bday get
  /bday delete номер
  /bday help
@@ -113,7 +113,7 @@ async def handle_bdays(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     
     if cmd == "add":
         if len(split_text) != 3:
-            await update.message.reply_text("Использование: /bday add дд.мм.гг Имечко Фамилия")
+            await update.message.reply_text("Использование: /bday add дд.мм.гггг Имечко Фамилия")
             return
         await update.message.reply_text(birthday.add_birthday(caller_id, split_text[1], split_text[2].replace("@", "")))
         return
