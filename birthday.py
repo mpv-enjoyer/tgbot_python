@@ -45,11 +45,12 @@ def add_birthday(caller_id: str, date: str, comment: str) -> str:
     con.commit()
     return f"Добавлен день рождения для {comment} на дату {date}"
 
-def actualize_birthday_last_notification(caller_id: str, offset: str):
+def actualize_birthday_last_notification(global_offset: str):
     global cur, con
-    what = f"UPDATE {TABLE_BIRTHDAYS} SET last_notified_year = {datetime.datetime.now().year} WHERE rowid = (SELECT rowid FROM {TABLE_BIRTHDAYS} WHERE caller_id = {caller_id} ORDER BY birthday LIMIT 1 OFFSET {offset});"
+    what = f"UPDATE {TABLE_BIRTHDAYS} SET last_notified_year = {datetime.datetime.now().year} WHERE rowid = (SELECT rowid FROM {TABLE_BIRTHDAYS} ORDER BY birthday LIMIT 1 OFFSET {global_offset});"
     cur.execute(what)
     con.commit()
+    print("actualize_birthday_last_notification successful!")
 
 def remove_birthday(caller_id: str, offset: str, convert_from_user_friendly = False):
     global cur, con
@@ -97,7 +98,7 @@ def main():
             continue
         cmd = user_input_split[0]
         if cmd == "get":
-            print(get_birthdays(DEBUG_CALLER))
+            print(get_all_birthdays())
         if cmd == "add" and len(user_input_split) == 3:
             print(add_birthday(DEBUG_CALLER, user_input_split[1], user_input_split[2]))
         if cmd == "del" and len(user_input_split) == 2:

@@ -11,44 +11,52 @@ sql.threadsafety = 3 # https://docs.python.org/3/library/sqlite3.html#sqlite3.th
 import asyncio
 from telegram import Update, Bot
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
-from datetime import datetime
+from datetime import datetime, timedelta
 
-def birthday_logic(application: Application):
+async def birthday_logic(bot: Bot):
     import birthday
     bdays, callers = birthday.get_all_birthdays()
     current_year = datetime.now().year
     current_month = datetime.now().month
     current_day = datetime.now().day
     current_hour = datetime.now().hour
-    for index, bday in enumerate(bdays):
-        caller_id, bday_str, comment, last_notified_year = bday
-        if current_year >= last_notified_year:
-            continue
-        parsed_date = datetime.strptime(bday_str, birthday.SQL_DATE_FORMAT).date()
-        if parsed_date.month != current_month:
-            continue
-        if parsed_date.day != current_day:
-            continue
-        for caller in callers: # TODO: slow
-            if caller[0] == caller_id:
-                caller_hour = caller[1]
-                break
-        if caller_hour > current_hour:
-            continue
+    for global_index, bday in enumerate(bdays):
+        try:
+            caller_id, bday_str, comment, last_notified_year = bday
+            if current_year <= last_notified_year:
+                #print("skip because 1")
+                continue
+            parsed_date = datetime.strptime(bday_str, birthday.SQL_DATE_FORMAT).date()
+            if parsed_date.month != current_month:
+                #print("skip because 2")
+                continue
+            if parsed_date.day != current_day:
+                #print("skip because 3")
+                continue
+            for caller in callers: # TODO: slow
+                if caller[0] == caller_id:
+                    caller_hour = caller[1]
+                    break
+            if caller_hour > current_hour:
+                #print(f"skip because 4 {caller_hour} > {current_hour}")
+                continue
 
-        # Finally we should send a message here:
-        Bot(application.bot).send_message(chat_id=caller_id, text=f"С днем рождения, {comment}!")
+            # Finally we should send a message here:
+            await bot.send_message(chat_id=caller_id, text=f"С днем рождения, {comment}!")
 
-        # Also increment year in db:
-        birthday.actualize_birthday_last_notification(caller_id, index)
+            # Also increment year in db:
+            birthday.actualize_birthday_last_notification(global_index)
+        except Exception as e:
+            print(e)
 
-async def birthdays(application: Application):
+async def birthdays(bot: Bot):
     import birthday
     birthday.init_db_if_needed()
+    await asyncio.sleep(3) # potential race with telegram api
     print("birthday_logic bootstrapped")
     while True:
         try:
-            birthday_logic(application)
+            await birthday_logic(bot)
         except Exception as e:
             print(e)
             pass
@@ -122,13 +130,15 @@ def main() -> None:
     with open("SECRET.txt", "r") as secret_file:
         SECRET = secret_file.read().rstrip()
     application = Application.builder().token(SECRET).build()
+    bot = application.bot
     application.add_handler(CommandHandler("ai", echo))
     application.add_handler(CommandHandler("bday", handle_bdays))
     # COMMAND HANDLERS MUST BE BEFORE MESSAGE HANDLERS IN CODE.....
     application.add_handler(MessageHandler(filters.USER, echo_ehh))
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.create_task(birthdays(application))
+    
+    loop.create_task(birthdays(bot), )
     application.run_polling(allowed_updates=Update.MESSAGE)
 
 if __name__ == "__main__":
