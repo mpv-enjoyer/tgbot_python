@@ -33,7 +33,7 @@ def add_birthday(caller_id: str, date: str, comment: str) -> str:
         sql_date = datetime.datetime.strptime(date, DATE_FORMAT).strftime(SQL_DATE_FORMAT)
         caller_id = int(caller_id)
     except Exception as e:
-        return f"Вводите дату в формате дд.мм.гг: {e}"
+        return f"Вводите дату в формате дд.мм.гггг: {e}"
 
     if cur.execute(f"SELECT * FROM {TABLE_CALLERS} WHERE caller_id={caller_id}").fetchone() is None:
         DEFAULT_NOTIFICATION_TIME = 12
