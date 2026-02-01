@@ -13,16 +13,20 @@ import asyncio
 
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+last_returned_date = datetime.date()
+
 async def birthdays():
+    WANT_MINUTE = 59
+    minute = datetime.now().minute
     while True:
-        print("Every 1 sec")
-        await asyncio.sleep(1)
+        print("Every 1 hour")
+        await asyncio.sleep(60 * 60)
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    context.job_queue.run_repeating()
     replied_to = update.message.reply_to_message
     if replied_to is not None:
         #await replied_to.reply_photo("ai.jpg")
@@ -33,7 +37,7 @@ def is_caller_admin(update: Update) -> bool:
     # Source - https://stackoverflow.com/a/74736279
     # Posted by CallMeStag
     # Retrieved 2026-02-01, License - CC BY-SA 4.0
-    
+
     chat_admins = update.effective_chat.get_administrators()
     return update.effective_user in (admin.user for admin in chat_admins)
 
