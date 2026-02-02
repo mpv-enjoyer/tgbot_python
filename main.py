@@ -12,14 +12,16 @@ import asyncio
 from telegram import Update, Bot
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 async def birthday_logic(bot: Bot):
     import birthday
-    bdays, callers = birthday.get_all_birthdays()
-    current_year = datetime.now().year
-    current_month = datetime.now().month
-    current_day = datetime.now().day
-    current_hour = datetime.now().hour
+    bdays, callers = await birthday.get_all_birthdays()
+    msk_now = datetime.now(ZoneInfo('Europe/Moscow'))
+    current_year = msk_now.year
+    current_month = msk_now.month
+    current_day = msk_now.day
+    current_hour = msk_now.hour
     for global_index, bday in enumerate(bdays):
         try:
             caller_id, bday_str, comment, last_notified_year = bday
@@ -45,13 +47,13 @@ async def birthday_logic(bot: Bot):
             await bot.send_message(chat_id=caller_id, text=f"С днем рождения, {comment}!")
 
             # Also increment year in db:
-            birthday.actualize_birthday_last_notification(global_index)
+            await birthday.actualize_birthday_last_notification(global_index)
         except Exception as e:
             print(e)
 
 async def birthdays(bot: Bot):
     import birthday
-    birthday.init_db_if_needed()
+    await birthday.init_db_if_needed()
     await asyncio.sleep(3) # potential race with telegram api
     print("birthday_logic bootstrapped")
     while True:
@@ -99,7 +101,7 @@ async def handle_bdays(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     
     cmd = split_text[0]
     if cmd == "get":
-        bdays = birthday.get_birthdays(caller_id)
+        bdays = await birthday.get_birthdays(caller_id)
         if bdays[1] is None:
             await update.message.reply_text("В данном чате или лс нет дней рождения")
         
@@ -115,13 +117,13 @@ async def handle_bdays(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         if len(split_text) != 3:
             await update.message.reply_text("Использование: /bday add дд.мм.гггг Имечко Фамилия")
             return
-        await update.message.reply_text(birthday.add_birthday(caller_id, split_text[1], split_text[2].replace("@", "")))
+        await update.message.reply_text(await birthday.add_birthday(caller_id, split_text[1], split_text[2].replace("@", "")))
         return
     if cmd == "delete" or cmd == "remove":
         if len(split_text) != 2:
             await update.message.reply_text("Использование: /bday delete номер")
             return
-        await update.message.reply_text(birthday.remove_birthday(caller_id, split_text[1], True))
+        await update.message.reply_text(await birthday.remove_birthday(caller_id, split_text[1], True))
         return
 
     await update.message.reply_text("а?")
